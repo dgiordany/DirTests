@@ -13,7 +13,7 @@ public class DirTest {
     @DataProvider(name = "directories")
     Object[] getDirectory() {
         return new Object[] {
-                System.getProperty("user.dir") + File.separator + "src",
+//                System.getProperty("user.dir") + File.separator + "src",
                 System.getProperty("user.home") + File.separator + "Pictures",
                 System.getenv("windir") + File.separator + "Help"
         };
@@ -35,21 +35,36 @@ public class DirTest {
 
     /*
         Берем список файлов из директории.
-        Создаем новый файл, проверяем, что количество файлов стало на один больше.
-        Удаляем файл, проверяем, что количество файлов стало на один меньше.
+        Создаем новый файл в двух новых директориях, вложенных друг в друга.
+        Проверяем, что количество файлов стало на три больше.
+        Удаляем файл и созданные папки, проверяем, что количество файлов стало на один меньше.
     */
     @Test
     void testChangeFilesSizeInDirectory() {
         CommandLineService commandService = new CommandLineService();
-        String fileName = "privet.txt";
+        String fileName = File.separator + "privet.txt";
+        String dirOne = File.separator + "one";
+        String dirTwo = File.separator + "two";
         String directoryPath = System.getProperty("user.home") + File.separator + "Pictures";
         int firstFilePaths = commandService.execute(dirCommand + directoryPath).size();
 
-        commandService.execute("type nul > " + directoryPath + File.separator + fileName);
-        assert commandService.execute(dirCommand + directoryPath).size() == firstFilePaths + 1;
+        commandService.execute("mkdir " + directoryPath + dirOne + dirTwo);
+        commandService.execute("type nul > " + directoryPath + dirOne + dirTwo + fileName);
+        assert commandService.execute(dirCommand + directoryPath).size() == firstFilePaths + 3;
 
-        commandService.execute("del " + directoryPath + File.separator + fileName);
+        commandService.execute("rmdir /q/s " + directoryPath + dirOne);
         assert firstFilePaths == commandService.execute(dirCommand + directoryPath).size();
+    }
+
+    /*
+        Пытаемся прочитать список файлов и папок из несуществующей директории.
+        Количество полученных строк должно быть равно нулю.
+    */
+    @Test
+    void testNotExistingFolder() {
+        CommandLineService commandService = new CommandLineService();
+        List<String> output = commandService.execute(dirCommand + "yamalenkayaloshadka");
+        assert output.size() == 0;
     }
 
     private List<String> getAllFilesFromDirectory(String directoryPath) {
