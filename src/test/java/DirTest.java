@@ -1,11 +1,11 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
 import services.CommandLineService;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class DirTest {
     private String dirCommand = "dir /s/b ";
@@ -13,7 +13,7 @@ public class DirTest {
     @DataProvider(name = "directories")
     Object[] getDirectory() {
         return new Object[] {
-//                System.getProperty("user.dir") + File.separator + "src",
+                System.getProperty("user.dir") + File.separator + "src",
                 System.getProperty("user.home") + File.separator + "Pictures",
                 System.getenv("windir") + File.separator + "Help"
         };
@@ -29,8 +29,12 @@ public class DirTest {
         List<String> actualPaths = new CommandLineService().execute(dirCommand + directoryPath);
         List<String> expectedPaths = getAllFilesFromDirectory(directoryPath);
 
-        assert actualPaths.size() == expectedPaths.size();
-        assert expectedPaths.containsAll(actualPaths);
+        assertThat(actualPaths.size())
+            .as("Количество файлов, полученных командой " + dirCommand)
+            .isEqualTo(expectedPaths.size());
+        assertThat(actualPaths)
+            .as("Пути файлов и папок")
+            .containsAll(expectedPaths);
     }
 
     /*
@@ -45,15 +49,25 @@ public class DirTest {
         String fileName = File.separator + "privet.txt";
         String dirOne = File.separator + "one";
         String dirTwo = File.separator + "two";
-        String directoryPath = System.getProperty("user.home") + File.separator + "Pictures";
+        String directoryPath = System.getProperty("user.home");
+
         int firstFilePaths = commandService.execute(dirCommand + directoryPath).size();
 
         commandService.execute("mkdir " + directoryPath + dirOne + dirTwo);
         commandService.execute("type nul > " + directoryPath + dirOne + dirTwo + fileName);
-        assert commandService.execute(dirCommand + directoryPath).size() == firstFilePaths + 3;
+        try {
+            assertThat(commandService.execute(dirCommand + directoryPath).size()).
+                    as("Количество файлов и папок после добавления новых")
+                    .isEqualTo(firstFilePaths + 3);
+        } catch (AssertionError error) {
+            throw new AssertionError(error.getMessage());
+        } finally {
+            commandService.execute("rmdir /q/s " + directoryPath + dirOne);
+        }
 
-        commandService.execute("rmdir /q/s " + directoryPath + dirOne);
-        assert firstFilePaths == commandService.execute(dirCommand + directoryPath).size();
+        assertThat(commandService.execute(dirCommand + directoryPath).size()).
+                as("Количество файлов и папок после удаления")
+                .isEqualTo(firstFilePaths);
     }
 
     /*
@@ -64,7 +78,9 @@ public class DirTest {
     void testNotExistingFolder() {
         CommandLineService commandService = new CommandLineService();
         List<String> output = commandService.execute(dirCommand + "yamalenkayaloshadka");
-        assert output.size() == 0;
+        assertThat(output.size()).
+            as("Количество папок и файлов")
+            .isEqualTo(0);
     }
 
     private List<String> getAllFilesFromDirectory(String directoryPath) {

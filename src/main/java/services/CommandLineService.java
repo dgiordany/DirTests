@@ -1,17 +1,15 @@
 package services;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CommandLineService {
-    private String programPath = System.getenv("WINDIR") + "\\system32\\cmd.exe /c ";
+    private static final String APPLICATION_PATH = System.getenv("WINDIR") +
+        File.separator + "system32" + File.separator + "cmd.exe /c ";
 
     /**
      * @param command команда для запуска в консоли Windows
@@ -21,8 +19,9 @@ public class CommandLineService {
         List<String> output = new ArrayList<>();
         String line;
         try {
-            Process process = Runtime.getRuntime().exec(programPath + " " + command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            Process process = Runtime.getRuntime().exec(APPLICATION_PATH + " " + command);
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), "CP866"));
             while ((line = reader.readLine()) != null) {
                 output.add(line);
             }
